@@ -23,11 +23,18 @@ export default function Sidebar({ unreadCount = 0 }) {
   };
 
   const caregiverLinks = [
-    { icon: Users,         label: 'Patients',   path: '/dashboard' },
-    { icon: ClipboardList, label: 'Reports',    path: '/reports' },
+    { icon: Users,         label: 'Dashboard',   path: '/dashboard' },
+    { icon: ClipboardList, label: 'Medications', path: '/reports' }, // Map to reports for now
+    { icon: ShieldCheck,   label: 'Care Team',   path: '/care-team' },
+    { icon: BarChart2,     label: 'Insights',    path: '/reports' },
+    { icon: Bell,          label: 'Settings',    path: '#' },
   ];
   const patientLinks = [
-    { icon: Activity, label: 'My Medications', path: '/patient' },
+    { icon: Activity,      label: 'Dashboard',   path: '/patient' },
+    { icon: ClipboardList, label: 'Medications', path: '/patient' },
+    { icon: Users,         label: 'Care Team',   path: '/care-team' },
+    { icon: BarChart2,     label: 'Insights',    path: '#' },
+    { icon: Bell,          label: 'Settings',    path: '#' },
   ];
   const links = user?.role === 'patient' ? patientLinks : caregiverLinks;
 
@@ -37,49 +44,67 @@ export default function Sidebar({ unreadCount = 0 }) {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div className="sidebar-brand-icon">
-          <Activity size={20} color="#fff" />
+          <Activity size={20} color="#fff" strokeWidth={3} />
         </div>
-        <h1>ElderCare<span>Medication Monitor</span></h1>
+        <h1>CareMonitor<span>Healthcare Dashboard</span></h1>
       </div>
 
       <nav className="sidebar-nav">
-        <p className="nav-section-label">Navigation</p>
+        <p className="nav-section-label">Menu</p>
         {links.map(({ icon: Icon, label, path }) => (
           <div
             key={label}
             className={`nav-item ${pathname === path ? 'active' : ''}`}
-            onClick={() => path && navigate(path)}
+            onClick={() => path !== '#' && navigate(path)}
+            style={{ cursor: path === '#' ? 'default' : 'pointer', opacity: path === '#' ? 0.5 : 1 }}
           >
-            <Icon size={18} />
+            <Icon size={20} strokeWidth={2.5} />
             <span>{label}</span>
           </div>
         ))}
       </nav>
 
       <div className="sidebar-footer">
-        <div className="sidebar-user">
-          <div className="user-avatar">{initials}</div>
+        <div className="sidebar-user" style={{ background: 'var(--bg-deep)', marginBottom: 12 }}>
+          <div className="user-avatar" style={{ background: 'var(--primary)', color: 'white' }}>{initials}</div>
           <div className="user-info">
             <div className="user-name">{user?.name}</div>
-            <div className="user-role">{user?.role}</div>
+            <div className="user-role" style={{ color: 'var(--primary)', fontWeight: 700 }}>{user?.role}</div>
           </div>
-          {unreadCount > 0 && (
-            <span style={{ background: 'var(--danger)', color: '#fff', borderRadius: '999px', padding: '1px 7px', fontSize: '0.7rem', fontWeight: 700 }}>
-              {unreadCount}
-            </span>
-          )}
         </div>
+        
         <button 
           className="btn-logout" 
           onClick={toggleSMS} 
           disabled={updating}
-          style={{ marginBottom: 8, color: user?.smsEnabled ? 'var(--success-light)' : 'var(--text-muted)' }}
-          title={user?.smsEnabled ? 'SMS Alerts Enabled' : 'SMS Alerts Disabled'}
+          style={{ 
+            marginBottom: 8, 
+            background: 'transparent',
+            border: 'none',
+            justifyContent: 'flex-start',
+            padding: '10px 14px',
+            color: user?.smsEnabled ? 'var(--success)' : 'var(--text-muted)' 
+          }}
         >
-          <MessageSquare size={16} /> <span>{updating ? 'Updating...' : user?.smsEnabled ? 'SMS: On' : 'SMS: Off'}</span>
+          <MessageSquare size={18} /> 
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+            {updating ? 'Updating...' : user?.smsEnabled ? 'SMS Alerts: ON' : 'SMS Alerts: OFF'}
+          </span>
         </button>
-        <button className="btn-logout" onClick={logout}>
-          <LogOut size={16} /> Logout
+
+        <button 
+          className="btn-logout" 
+          onClick={logout}
+          style={{ 
+            background: 'transparent',
+            border: 'none',
+            justifyContent: 'flex-start',
+            padding: '10px 14px',
+            color: 'var(--danger)'
+          }}
+        >
+          <LogOut size={18} /> 
+          <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>Logout</span>
         </button>
       </div>
     </aside>

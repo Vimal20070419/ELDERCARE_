@@ -87,3 +87,5 @@ The platform aims to bridge the gap between prescribed treatment and actual medi
 ### Default Credentials (for testing)
 - **Default Password for New Patients**: `123456`
 - **Default Port**: `5173` (Frontend), `5000` (Backend)
+
+# ELDERCARE_

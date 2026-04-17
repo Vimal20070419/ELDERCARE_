@@ -24,36 +24,33 @@ export default function PatientCard({ patient }) {
         <div style={{ flex: 1 }}>
           <div className="patient-name">{name}</div>
           <div className="patient-meta">
-            Age {patient.age || 'N/A'}
-            {patient.comorbidities?.length > 0 && ` · ${patient.comorbidities.slice(0,2).join(', ')}`}
+            Age {patient.age || 'N/A'} · {rate >= 80 ? 'Good Adherence' : 'Needs Attention'}
           </div>
         </div>
-        <ChevronRight size={18} color="var(--text-muted)" />
+        <ChevronRight size={20} color="var(--text-muted)" />
       </div>
 
       <div className="patient-stats">
         <div className="patient-stat">
-          <div className="value">{meds}</div>
-          <div className="label">Meds</div>
+          <span className="value">{meds}</span>
+          <span className="label">Meds</span>
         </div>
         <div className="patient-stat">
-          <div className="value" style={{ color: rate >= 80 ? 'var(--success-light)' : rate >= 60 ? 'var(--warning-light)' : 'var(--danger-light)' }}>
-            {typeof rate === 'number' ? `${rate}%` : rate}
-          </div>
-          <div className="label">Adherence</div>
+          <span className="value">{typeof rate === 'number' ? `${rate}%` : rate}</span>
+          <span className="label">Adherence</span>
         </div>
         <div className="patient-stat">
-          <div className="value" style={{ color: riskColor, display: 'flex', alignItems: 'center', gap: 4 }}>
-             <Brain size={12} /> {risk}
-          </div>
-          <div className="label">Risk Score</div>
+          <span className="value" style={{ color: riskColor, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+            <Brain size={14} /> {risk}
+          </span>
+          <span className="label">Risk</span>
         </div>
       </div>
 
       {patient.comorbidities?.length > 0 && (
-        <div className="med-detail">
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 8 }}>
           {patient.comorbidities.slice(0,3).map((c) => (
-            <span key={c} className="med-chip">{c}</span>
+            <span key={c} className="med-chip" style={{ fontSize: '0.65rem', padding: '4px 10px' }}>{c}</span>
           ))}
         </div>
       )}

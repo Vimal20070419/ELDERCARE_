@@ -7,6 +7,7 @@ import PatientDashboard from './pages/PatientDashboard';
 import DoctorDashboard from './pages/DoctorDashboard';
 import ReportsDashboard from './pages/ReportsDashboard';
 import ReportsPage from './pages/ReportsPage';
+import CareTeamPage from './pages/CareTeamPage';
 
 const getUser = () => {
   try { return JSON.parse(localStorage.getItem('user')); } catch { return null; }
@@ -40,6 +41,9 @@ export default function App() {
       } />
       <Route path="/reports" element={
         <PrivateRoute role={['caregiver', 'doctor']}><ReportsDashboard /></PrivateRoute>
+      } />
+      <Route path="/care-team" element={
+        <PrivateRoute role={['caregiver', 'patient']}><CareTeamPage /></PrivateRoute>
       } />
       <Route path="/reports/:patientId" element={
         <PrivateRoute role={['caregiver', 'doctor']}><ReportsPage /></PrivateRoute>

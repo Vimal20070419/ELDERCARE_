@@ -71,47 +71,72 @@ class AdherenceService {
     const twoWeeksAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
     const logs = await AdherenceLog.find({
       patientId,
-      scheduledAt: { $gte: twoWeeksAgo },
-    }).sort({ scheduledAt: 1 }).populate('medicationId', 'name');
+      scheduledAt: { $gte: twoWeeksAgo }
+    }).sort({ scheduledAt: 1 });
 
-    const alerts = [];
+    const meds = await Medication.find({ patientId, status: 'active' });
+    const patterns = [];
 
-    // Group by medication
-    const byMed = {};
-    for (const log of logs) {
-      const id = log.medicationId?._id?.toString() || log.medicationId.toString();
-      if (!byMed[id]) byMed[id] = { name: log.medicationId?.name || '', logs: [] };
-      byMed[id].logs.push(log);
-    }
+    for (const med of meds) {
+      const medLogs = logs.filter(l => l.medicationId.toString() === med._id.toString());
+      if (medLogs.length < 5) continue;
 
-    for (const [medId, { name, logs: medLogs }] of Object.entries(byMed)) {
-      // Check consecutive misses
+      const missed = medLogs.filter(l => l.status === 'missed' || l.status === 'skipped');
+      const rate = Math.round(((medLogs.length - missed.length) / medLogs.length) * 100);
+
+      // 1. Threshold detection
+      let severity = 'low';
+      if (rate < 60) severity = 'high';
+      else if (rate < 80) severity = 'medium';
+
+      // 2. Consecutive misses
       let consecutive = 0;
       let maxConsecutive = 0;
-      for (const l of medLogs) {
-        if (l.status === 'missed' || l.status === 'skipped') {
-          consecutive++;
+      for (const log of medLogs) {
+        if (log.status === 'missed' || log.status === 'skipped') consecutive++;
+        else {
           maxConsecutive = Math.max(maxConsecutive, consecutive);
-        } else {
           consecutive = 0;
         }
       }
+      maxConsecutive = Math.max(maxConsecutive, consecutive);
+      if (maxConsecutive >= 3) severity = 'high';
 
-      const taken = medLogs.filter((l) => l.status === 'taken').length;
-      const rate = medLogs.length > 0 ? Math.round((taken / medLogs.length) * 100) : 100;
+      // 3. Temporal (Time-of-day) deficit detection
+      const hourCounts = { morning: 0, afternoon: 0, evening: 0, night: 0 };
+      const hourMisses = { morning: 0, afternoon: 0, evening: 0, night: 0 };
 
-      if (maxConsecutive >= 3 || rate < 60) {
-        alerts.push({
-          medicationId: medId,
-          name,
-          consecutiveMisses: maxConsecutive,
+      medLogs.forEach(l => {
+        const hour = new Date(l.scheduledAt).getHours();
+        let slot = 'night';
+        if (hour >= 6 && hour < 12) slot = 'morning';
+        else if (hour >= 12 && hour < 17) slot = 'afternoon';
+        else if (hour >= 17 && hour < 21) slot = 'evening';
+        
+        hourCounts[slot]++;
+        if (l.status === 'missed' || l.status === 'skipped') hourMisses[slot]++;
+      });
+
+      const temporalPatterns = [];
+      Object.keys(hourCounts).forEach(slot => {
+        if (hourCounts[slot] >= 3 && (hourMisses[slot] / hourCounts[slot]) > 0.5) {
+          temporalPatterns.push(`${slot} deficit`);
+        }
+      });
+
+      if (severity !== 'low' || temporalPatterns.length > 0) {
+        patterns.push({
+          medicationId: med._id,
+          name: med.name,
           twoWeekRate: rate,
-          severity: maxConsecutive >= 5 || rate < 40 ? 'high' : 'medium',
+          consecutiveMisses: maxConsecutive,
+          temporalPatterns,
+          severity
         });
       }
     }
 
-    return alerts;
+    return patterns;
   }
 
   /**

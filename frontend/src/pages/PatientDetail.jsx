@@ -93,198 +93,148 @@ export default function PatientDetail() {
     <div className="app-shell">
       <Sidebar unreadCount={unreadCount} />
       <div className="main-content">
-        <div className="page-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <button className="btn btn-ghost btn-icon" onClick={() => navigate('/dashboard')}><ArrowLeft size={18} /></button>
-            <div>
-              <h2>{name}</h2>
-              <p>Age {patient?.age || 'N/A'} · {patient?.comorbidities?.join(', ') || 'No comorbidities listed'}</p>
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-            <NotificationBell notifications={notifications} unreadCount={unreadCount} onMarkRead={markRead} onMarkAll={markAllRead} />
-            <button
-              id="generate-report-btn"
-              className="btn btn-secondary"
-              onClick={() => navigate(`/reports/${id}`)}
-            >
-              <FileText size={16} /> Report
-            </button>
-            <button id="add-med-btn" className="btn btn-primary" onClick={() => setShowAddMed(true)}>
-              <Plus size={16} /> Add Medication
-            </button>
-          </div>
-        </div>
-
-        <div className="page-body">
-          {/* Overview Stats */}
-          <div className="stats-grid" style={{ gridTemplateColumns: '1.2fr 1fr 1fr 1fr 1fr', marginBottom: 24, gap: 12 }}>
-            <div className="stat-card" style={{ background: 'rgba(99, 102, 241, 0.05)', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-                <Brain size={16} color="var(--primary-light)" />
-                <span className="stat-label" style={{ marginBottom: 0 }}>Health Risk Score</span>
+        <div className="dashboard-layout">
+          {/* Main Detail Area */}
+          <div className="main-feed">
+            <div className="page-header">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <button className="btn btn-ghost btn-icon" onClick={() => navigate('/dashboard')} style={{ background: 'var(--bg-deep)' }}><ArrowLeft size={18} /></button>
+                <div>
+                  <h2>{name}</h2>
+                  <p>Age {patient?.age || 'N/A'} · {patient?.comorbidities?.join(', ') || 'No primary conditions listed'}</p>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
-                 <span className="stat-value" style={{ color: riskColor(aiData?.healthRiskScore || 0) }}>
-                   {aiData ? aiData.healthRiskScore : '--'}
-                 </span>
-                 <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>/ 100</span>
+              <div style={{ display: 'flex', gap: 12 }}>
+                <button id="add-med-btn" className="btn btn-primary" onClick={() => setShowAddMed(true)}>
+                  <Plus size={16} /> Add Medication
+                </button>
               </div>
-              <p style={{ fontSize: '0.75rem', marginTop: 4, color: riskColor(aiData?.healthRiskScore || 0), fontWeight: 600 }}>
-                 {aiData?.riskLevel} Risk
-              </p>
             </div>
-            <div className="stat-card">
-              <span className="stat-label">Weekly Adherence</span>
-              <span className="stat-value" style={{
-                color: typeof totalRate === 'number'
-                  ? totalRate >= 80 ? 'var(--success-light)'
-                  : totalRate >= 60 ? 'var(--warning-light)'
-                  : 'var(--danger-light)'
-                  : 'var(--text-muted)'
-              }}>{typeof totalRate === 'number' ? `${totalRate}%` : totalRate}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Active Meds</span>
-              <span className="stat-value indigo">{meds.filter((m) => m.status === 'active').length}</span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Interactions</span>
-              <span className="stat-value" style={{ color: interactions.length > 0 ? 'var(--danger-light)' : 'var(--success-light)' }}>
-                {interactions.length}
-              </span>
-            </div>
-            <div className="stat-card">
-              <span className="stat-label">Patterns</span>
-              <span className="stat-value" style={{ color: patterns.length > 0 ? 'var(--warning-light)' : 'var(--success-light)' }}>
-                {patterns.length}
-              </span>
-            </div>
-          </div>
 
-          {/* Tabs */}
-          <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border)', paddingBottom: 0 }}>
-            {tabs.map((t) => (
-              <button
-                key={t.id}
-                id={`tab-${t.id}`}
-                className="btn btn-ghost"
-                onClick={() => setActiveTab(t.id)}
-                style={{
-                  borderBottom: activeTab === t.id ? '2px solid var(--primary)' : '2px solid transparent',
-                  borderRadius: 0, color: activeTab === t.id ? 'var(--primary-light)' : 'var(--text-muted)',
-                  paddingBottom: 10,
-                }}
-              >
-                <t.icon size={15} /> {t.label}
-                {t.count > 0 && (
-                  <span style={{ background: 'var(--danger)', color: '#fff', borderRadius: '999px', padding: '0 6px', fontSize: '0.7rem', marginLeft: 4 }}>
-                    {t.count}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+            <div className="page-body">
+              {/* Top Metrics Row */}
+              <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 32 }}>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'var(--primary-glow)' }}><TrendingUp size={24} color="var(--primary)" /></div>
+                  <div className="stat-info">
+                    <span className="stat-label">Adherence</span>
+                    <span className="stat-value" style={{
+                      color: typeof totalRate === 'number'
+                        ? totalRate >= 80 ? 'var(--success)'
+                        : totalRate >= 60 ? 'var(--warning)'
+                        : 'var(--danger)'
+                        : 'var(--text-muted)'
+                    }}>{typeof totalRate === 'number' ? `${totalRate}%` : totalRate}</span>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: 'var(--success-bg)' }}><Pill size={24} color="var(--success)" /></div>
+                  <div className="stat-info">
+                    <span className="stat-label">Active Meds</span>
+                    <span className="stat-value">{meds.filter((m) => m.status === 'active').length}</span>
+                  </div>
+                </div>
+                <div className="stat-card">
+                  <div className="stat-icon" style={{ background: riskColor(aiData?.healthRiskScore || 0).replace('light', 'bg') }}><Brain size={24} color={riskColor(aiData?.healthRiskScore || 0)} /></div>
+                  <div className="stat-info">
+                    <span className="stat-label">Risk Score</span>
+                    <span className="stat-value" style={{ color: riskColor(aiData?.healthRiskScore || 0) }}>{aiData ? aiData.healthRiskScore : '--'}</span>
+                  </div>
+                </div>
+              </div>
 
-          {activeTab === 'medications' && (
-            <div>
-              {meds.length === 0 ? (
-                <div className="empty-state"><Pill size={40} /><p>No medications added yet.</p></div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 16 }}>
+              {/* Functional Tabs */}
+              <div style={{ display: 'flex', gap: 24, marginBottom: 24, borderBottom: '1px solid var(--border)' }}>
+                {tabs.slice(0, 3).map((t) => (
+                  <button
+                    key={t.id}
+                    className="btn btn-ghost"
+                    onClick={() => setActiveTab(t.id)}
+                    style={{
+                      borderBottom: activeTab === t.id ? '2px solid var(--primary)' : '2px solid transparent',
+                      borderRadius: 0, padding: '12px 4px',
+                      color: activeTab === t.id ? 'var(--primary)' : 'var(--text-muted)',
+                      fontWeight: 700, fontSize: '0.95rem'
+                    }}
+                  >
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+
+              {activeTab === 'medications' && (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 20 }}>
                   {meds.map((m) => <MedicationCard key={m._id} med={m} onRefresh={loadAll} />)}
                 </div>
               )}
-            </div>
-          )}
 
-          {activeTab === 'adherence' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-              {chartData.length === 0 ? (
-                <div className="empty-state"><TrendingUp size={40} /><p>No adherence data yet. Check-ins will appear here.</p></div>
-              ) : (
-                <>
+              {activeTab === 'adherence' && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
                   <MedAdherenceChart data={weeklyStats} />
                   <DailyAdherenceChart data={chartData} />
-                </>
+                </div>
               )}
-            </div>
-          )}
 
-          {activeTab === 'ai' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-               <div className="card" style={{ borderLeft: '4px solid var(--primary)' }}>
-                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                   <Sparkles size={20} color="var(--primary-light)" />
-                   <h4 style={{ margin: 0 }}>Behavioral Observations</h4>
-                 </div>
-                 {aiData?.behavioralInsights?.length > 0 ? (
-                   <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                     {aiData.behavioralInsights.map((insight, idx) => (
-                       <li key={idx} style={{ fontSize: '0.9rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
-                         {insight}
-                       </li>
-                     ))}
-                   </ul>
-                 ) : (
-                   <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem' }}>Insufficient data for deep behavioral analysis.</p>
-                 )}
-               </div>
-
-               {aiData?.safetyIntelligence?.length > 0 && (
-                 <div className="card" style={{ borderLeft: '4px solid var(--danger)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-                      <AlertTriangle size={20} color="var(--danger-light)" />
-                      <h4 style={{ margin: 0 }}>Safety Intelligence</h4>
-                    </div>
-                    <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
-                       {aiData.safetyIntelligence.map((warn, idx) => (
-                         <li key={idx} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
-                           {warn}
-                         </li>
-                       ))}
-                    </ul>
-                 </div>
-               )}
-            </div>
-          )}
-
-          {activeTab === 'interactions' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {interactions.length === 0 ? (
-                <div className="empty-state"><AlertTriangle size={40} /><p>No drug interaction flags detected.</p></div>
-              ) : (
-                interactions.map((f) => <InteractionBadge key={f._id} flag={f} onRefresh={loadAll} />)
-              )}
-            </div>
-          )}
-
-          {activeTab === 'patterns' && (
-            <div>
-              {patterns.length === 0 ? (
-                <div className="empty-state"><User size={40} /><p>No missed dose patterns detected. Great adherence!</p></div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {patterns.map((p) => (
-                    <div key={p.medicationId} className="card" style={{
-                      borderLeft: `4px solid ${p.severity === 'high' ? 'var(--danger)' : 'var(--warning)'}`,
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <p style={{ fontWeight: 700 }}>{p.name}</p>
-                          <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                            2-week rate: <strong style={{ color: p.twoWeekRate < 60 ? 'var(--danger-light)' : 'var(--warning-light)' }}>{p.twoWeekRate}%</strong>
-                            {p.consecutiveMisses > 0 && ` · ${p.consecutiveMisses} consecutive misses`}
-                          </p>
-                        </div>
-                        <span className={`badge badge-${p.severity}`}>{p.severity}</span>
-                      </div>
-                    </div>
-                  ))}
+              {activeTab === 'ai' && (
+                <div className="card" style={{ borderLeft: '4px solid var(--primary)', padding: 32 }}>
+                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 20 }}>
+                     <Sparkles size={24} color="var(--primary)" />
+                     <h3 style={{ margin: 0, fontSize: '1.25rem' }}>Healthcare AI Observations</h3>
+                   </div>
+                   {aiData?.behavioralInsights?.map((insight, idx) => (
+                     <div key={idx} style={{ padding: '16px 20px', background: 'var(--bg-deep)', borderRadius: 12, marginBottom: 12, fontSize: '0.95rem', lineHeight: 1.5 }}>
+                       {insight}
+                     </div>
+                   ))}
                 </div>
               )}
             </div>
-          )}
+          </div>
+
+          {/* Clinical Context Panel */}
+          <aside className="right-panel">
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+                <h4>Security & Safety</h4>
+                {interactions.length > 0 && <span className="badge badge-danger" style={{ borderRadius: 6 }}>CRITICAL FLAG</span>}
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {interactions.length === 0 ? (
+                  <div style={{ padding: 24, background: 'var(--success-bg)', borderRadius: 16, textAlign: 'center' }}>
+                    <ShieldCheck size={32} color="var(--success)" style={{ marginBottom: 8 }} />
+                    <p style={{ fontSize: '0.85rem', color: 'var(--success-dark)', fontWeight: 700 }}>No drug interactions</p>
+                  </div>
+                ) : (
+                  interactions.map((f) => <InteractionBadge key={f._id} flag={f} onRefresh={loadAll} />)
+                )}
+              </div>
+            </div>
+
+            <div style={{ marginBottom: 40 }}>
+              <h4>Behavioral Patterns</h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                {patterns.length === 0 ? (
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>No recurring missed dose patterns detected.</p>
+                ) : (
+                  patterns.map((p) => (
+                    <div key={p.medicationId} className="card" style={{ padding: 16, borderLeft: `4px solid ${p.severity === 'high' ? 'var(--danger)' : 'var(--warning)'}` }}>
+                      <p style={{ fontWeight: 800, fontSize: '0.9rem' }}>{p.name}</p>
+                      <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: 4 }}>
+                        {p.severity.toUpperCase()} PRIORITY · {p.twoWeekRate}% adherence
+                      </p>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div>
+              <button className="btn btn-secondary" style={{ width: '100%', padding: 14 }} onClick={() => navigate(`/reports/${id}`)}>
+                <FileText size={18} /> Generate Clinical Report
+              </button>
+            </div>
+          </aside>
         </div>
       </div>
 

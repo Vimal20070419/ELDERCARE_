@@ -22,6 +22,9 @@ const createApp = () => {
   // Load all module routes
   loadModules(app);
 
+  // Load Immutable Extensions
+  require('../bootstrapExtensions')(app);
+
   // Global error handler (must be last)
   app.use(errorHandler);
 

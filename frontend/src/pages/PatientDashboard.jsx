@@ -56,102 +56,113 @@ export default function PatientDashboard() {
   const rateColor = totalRate === null ? 'var(--text-muted)'
     : totalRate >= 80 ? 'var(--success-light)'
     : totalRate >= 60 ? 'var(--warning-light)'
-    : 'var(--danger-light)';
-
-  return (
+    : 'var(--danger-light)';  return (
     <div className="app-shell">
-      <Sidebar unreadCount={unreadCount} />
+      <Sidebar />
       <div className="main-content">
-        <div className="page-header">
-          <div>
-            <h2>My Medications</h2>
-            <p>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0]}</p>
-          </div>
-          <NotificationBell
-            notifications={notifications}
-            unreadCount={unreadCount}
-            onMarkRead={markRead}
-            onMarkAll={markAllRead}
-          />
-        </div>
-
-        <div className="page-body">
-          {loading ? (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {[1,2,3].map((i) => <div key={i} className="skeleton" style={{ height: 80, borderRadius: 12 }} />)}
+        <div className="dashboard-layout">
+          {/* Main Feed */}
+          <div className="main-feed">
+            <div className="page-header">
+              <div>
+                <h2>My Health Hub</h2>
+                <p>Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}, {user?.name?.split(' ')[0]}</p>
+              </div>
+              <NotificationBell
+                notifications={notifications}
+                unreadCount={unreadCount}
+                onMarkRead={markRead}
+                onMarkAll={markAllRead}
+              />
             </div>
-          ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, alignItems: 'start' }}>
-              {/* Left col: Check-in + stats */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {/* Weekly rate card */}
-                <div className="card" style={{ textAlign: 'center', padding: '28px' }}>
-                  <div style={{
-                    width: 100, height: 100, borderRadius: '50%', margin: '0 auto 16px',
-                    background: `conic-gradient(${rateColor} ${totalRate || 0}%, var(--bg-input) 0)`,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    position: 'relative',
-                  }}>
-                    <div style={{
-                      position: 'absolute', width: 76, height: 76, borderRadius: '50%',
-                      background: 'var(--bg-card)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontWeight: 800, fontSize: '1.2rem', color: rateColor,
+
+            <div className="page-body">
+              {loading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                  {[1,2,3].map((i) => <div key={i} className="skeleton" style={{ height: 120, borderRadius: 12 }} />)}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 32 }}>
+                  {/* Hero Metric Section */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'minmax(280px, 1fr) 2fr', gap: 24 }}>
+                    <div className="card" style={{ 
+                      textAlign: 'center', 
+                      padding: '32px',
+                      boxShadow: 'var(--shadow-premium)',
+                      background: 'white'
                     }}>
-                      {totalRate !== null ? `${totalRate}%` : 'N/A'}
+                      <div style={{
+                        width: 120, height: 120, borderRadius: '50%', margin: '0 auto 20px',
+                        background: `conic-gradient(${rateColor} ${totalRate || 0}%, var(--bg-input) 0)`,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        position: 'relative',
+                        boxShadow: `0 0 20px -5px ${rateColor}44`
+                      }}>
+                        <div style={{
+                          position: 'absolute', width: 96, height: 96, borderRadius: '50%',
+                          background: 'white',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexDirection: 'column',
+                          fontWeight: 800, fontSize: '1.4rem', color: rateColor
+                        }}>
+                          {totalRate !== null ? `${totalRate}%` : 'N/A'}
+                          <div style={{ fontSize: '0.6rem', opacity: 0.6, fontWeight: 700 }}>WEEKLY</div>
+                        </div>
+                      </div>
+                      <h3 style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--text-primary)' }}>Adherence Health</h3>
+                    </div>
+
+                    <div className="card" style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                      <h4 style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: 12 }}>ADHERENCE TREND</h4>
+                      {chartData.length > 0 && <DailyAdherenceChart data={chartData} />}
                     </div>
                   </div>
-                  <p style={{ fontWeight: 700, fontSize: '1rem' }}>Weekly Adherence</p>
-                  <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', marginTop: 4 }}>
-                    {totalRate === null ? 'Start checking in to track your progress'
-                     : totalRate >= 80 ? '🎉 Excellent! Keep it up.'
-                     : totalRate >= 60 ? '⚠️ Getting there. Try not to miss doses.'
-                     : '🚨 Low adherence. Please contact your caregiver.'}
-                  </p>
-                </div>
 
-                {/* Check-in panel */}
-                <CheckInPanel
-                  medications={meds}
-                  patientId={patient?._id}
-                  onCheckedIn={() => {}} // Could refresh stats
-                />
-              </div>
-
-              {/* Right col: Chart + med list */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-                {chartData.length > 0 && <DailyAdherenceChart data={chartData} />}
-
-                {/* All medications summary */}
-                <div className="card">
-                  <h3 style={{ fontWeight: 700, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Activity size={18} color="var(--primary-light)" /> My Prescriptions
-                  </h3>
-                  {meds.length === 0 ? (
-                    <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem' }}>No active medications.</p>
-                  ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {meds.map((m) => (
-                        <div key={m._id} style={{
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                          padding: '10px 14px', background: 'var(--bg-glass)',
-                          borderRadius: 'var(--radius-md)', border: '1px solid var(--border)',
-                        }}>
-                          <div>
-                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{m.name}</div>
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{m.dosage} · {m.frequency}</div>
-                          </div>
-                          <div style={{ display: 'flex', gap: 6 }}>
-                            {m.times?.map((t) => <span key={t} className="time-pill">{t}</span>)}
-                          </div>
-                        </div>
-                      ))}
+                  {/* Active Task (Check-In) */}
+                  <div style={{ maxWidth: '800px' }}>
+                    <div style={{ marginBottom: 20 }}>
+                      <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--text-primary)' }}>Today's Schedule</h3>
                     </div>
-                  )}
+                    <CheckInPanel
+                      medications={meds}
+                      patientId={patient?._id}
+                      onCheckedIn={() => {}}
+                    />
+                  </div>
                 </div>
+              )}
+            </div>
+          </div>
+
+          {/* Right Panel */}
+          <aside className="right-panel">
+            <div style={{ marginBottom: 40 }}>
+              <h4>My Prescriptions</h4>
+              {meds.length === 0 ? (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>No active medications.</p>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {meds.map((m) => (
+                    <div key={m._id} className="card" style={{ padding: '16px', background: 'var(--bg-deep)', border: 'none', boxShadow: 'none' }}>
+                      <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 4 }}>{m.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: 10 }}>{m.dosage} · {m.frequency}</div>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        {m.times?.map((t) => <span key={t} className="time-pill" style={{ background: 'white', border: '1px solid var(--border)', color: 'var(--primary)' }}>{t}</span>)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div>
+              <h4>Upcoming Alerts</h4>
+              <div className="card" style={{ padding: 16, borderLeft: '4px solid var(--primary)' }}>
+                <p style={{ fontSize: '0.85rem', fontWeight: 600, marginBottom: 4 }}>Refill Reminder</p>
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Atorvastatin refill due in 3 days.</p>
               </div>
             </div>
-          )}
+          </aside>
         </div>
       </div>
     </div>

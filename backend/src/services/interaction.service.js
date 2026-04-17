@@ -36,22 +36,25 @@ class InteractionService {
         const drugB = medicationNames[j].toLowerCase();
 
         for (const interactionText of interactions) {
-          if (interactionText.includes(drugB)) {
-            // Avoid duplicate pairs
+          // Robust matching: Check for drug name with word boundaries
+          const regex = new RegExp(`\\b${drugB}\\b`, 'i');
+          if (regex.test(interactionText)) {
+            // Avoid duplicate pairs (A-B vs B-A)
             const exists = flags.some(
               (f) =>
                 (f.drug1.toLowerCase() === drugA.toLowerCase() && f.drug2.toLowerCase() === drugB) ||
                 (f.drug1.toLowerCase() === drugB && f.drug2.toLowerCase() === drugA.toLowerCase())
             );
+            
             if (!exists) {
-              const snippet = interactionText.substring(0, 300);
+              const snippet = interactionText.substring(0, 500);
               flags.push({
                 drug1: drugA,
                 drug2: medicationNames[j],
                 severity: parseSeverity(interactionText),
                 description: snippet,
               });
-              logger.warn(`Interaction detected: ${drugA} ↔ ${medicationNames[j]} (${parseSeverity(interactionText)})`);
+              logger.warn(`Confirmed Interaction: ${drugA} ↔ ${medicationNames[j]} (${parseSeverity(interactionText)})`);
             }
             break;
           }

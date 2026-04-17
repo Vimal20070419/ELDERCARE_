@@ -75,7 +75,13 @@ export const notificationAPI = {
 
 // ── Reports ──
 export const reportAPI = {
-  getWeekly: (patientId) => api.get(`/reports/weekly/${patientId}`),
+  getWeekly: (patientId) => api.get(`/v1/physician-report/${patientId}`),
+};
+
+// ── OCR Auto-Injector ──
+export const ocrAPI = {
+  // Extending timeout here significantly to 60s since multimodal LLM calls can take 15-20s.
+  scan: (formData, dryRun = true) => api.post(`extensions/ocr/upload?dryRun=${dryRun}`, formData, { timeout: 60000 })
 };
 
 export default api;

@@ -45,19 +45,24 @@ class AIService {
   _calculateRiskScore(rate, interactions, patient) {
     let score = 0;
     
-    // 1. Adherence Deficit (max 40 pts)
-    score += (100 - rate) * 0.4;
+    // 1. Adherence Deficit (max 50 pts)
+    // Steep penalty for falling below 80%
+    if (rate < 80) {
+      score += (80 - rate) * 1.5;
+      score += 20; // Base penalty for low adherence
+    } else {
+      score += (100 - rate) * 1.0;
+    }
     
     // 2. Interaction Hazard (max 30 pts)
-    const severe = interactions.filter(i => i.severity === 'critical').length;
-    score += Math.min((interactions.length * 5) + (severe * 15), 30);
+    const critical = interactions.filter(i => i.severity === 'critical').length;
+    const high = interactions.filter(i => i.severity === 'high').length;
+    score += Math.min((critical * 20) + (high * 10), 30);
     
-    // 3. Demographic/Clinical Factors (max 30 pts)
-    if (patient.age > 75) score += 10;
-    if (patient.age > 85) score += 5;
-    if (patient.comorbidities?.length > 0) {
-      score += Math.min(patient.comorbidities.length * 5, 15);
-    }
+    // 3. Clinical Fragility (max 20 pts)
+    if (patient.age > 80) score += 10;
+    if (patient.comorbidities?.length >= 3) score += 10;
+    else if (patient.comorbidities?.length > 0) score += 5;
 
     return Math.min(Math.round(score), 100);
   }
@@ -71,37 +76,48 @@ class AIService {
   _generateBehavioralInsights(logs, patterns, rate) {
     const insights = [];
     
-    // Adherence overview
-    if (rate < 80) insights.push(`Overall adherence is at ${rate}%, which is below clinical target.`);
+    // 1. Overall Adherence Context
+    if (rate < 80) {
+      insights.push(`Patient adherence is currently at ${rate}%, which is significantly below the clinical target of 90%.`);
+    } else if (rate < 95) {
+      insights.push(`Adherence is generally good (${rate}%), but small inconsistencies are persisting.`);
+    }
     
-    // Temporal (Time of Day) analysis
-    const nightLogs = logs.filter(l => {
-      const hour = new Date(l.scheduledAt).getHours();
-      return hour >= 20 || hour < 6; // 8 PM to 6 AM
-    });
-    const missedNights = nightLogs.filter(l => l.status === 'missed').length;
-    if (nightLogs.length > 3 && (missedNights / nightLogs.length) > 0.3) {
-      insights.push('Significant pattern of missing late-night doses detected.');
+    // 2. Temporal/Pattern Specific Insights
+    if (patterns.length > 0) {
+      patterns.forEach(p => {
+        if (p.temporalPatterns?.length > 0) {
+          const times = p.temporalPatterns.join(' and ');
+          insights.push(`Detected a recurring ${times} for ${p.name}. Consider setting extra reminders for these time slots.`);
+        }
+        if (p.consecutiveMisses >= 3) {
+          insights.push(`Critical: Patient has missed ${p.consecutiveMisses} consecutive doses of ${p.name}. Immediate caregiver intervention recommended.`);
+        }
+      });
     }
 
-    // Weekend analysis
+    // 3. Time-of-Day Analysis (Aggregated)
+    const nightLogs = logs.filter(l => {
+      const hour = new Date(l.scheduledAt).getHours();
+      return hour >= 20 || hour < 6; 
+    });
+    const missedNights = nightLogs.filter(l => l.status === 'missed' || l.status === 'skipped').length;
+    if (nightLogs.length >= 3 && (missedNights / nightLogs.length) > 0.4) {
+      insights.push('Significant difficulty detected with late-night medication compliance.');
+    }
+
+    // 4. Weekend vs Weekday analysis
     const weekendLogs = logs.filter(l => {
       const day = new Date(l.scheduledAt).getDay();
       return day === 0 || day === 6;
     });
-    const missedWeekends = weekendLogs.filter(l => l.status === 'missed').length;
-    if (weekendLogs.length > 2 && (missedWeekends / weekendLogs.length) > 0.4) {
-      insights.push('Adherence consistency drops significantly during weekends.');
+    const missedWeekends = weekendLogs.filter(l => l.status === 'missed' || l.status === 'skipped').length;
+    if (weekendLogs.length >= 4 && (missedWeekends / weekendLogs.length) > 0.5) {
+      insights.push('Routine disruption observed during weekends, leading to higher rates of missed doses.');
     }
 
-    // Pattern matching
-    if (patterns.length > 0) {
-      const medNames = patterns.map(p => p.name).join(', ');
-      insights.push(`Recurring missed dose patterns identified for: ${medNames}.`);
-    }
-
-    if (insights.length === 0 && rate >= 95) {
-      insights.push('Patient demonstrates excellent adherence consistency across all doses.');
+    if (insights.length === 0 && rate >= 98) {
+      insights.push('Outstanding adherence performance. Patient maintains a near-perfect medication routine.');
     }
 
     return insights;
