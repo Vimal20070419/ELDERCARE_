@@ -1,7 +1,8 @@
 // services/api.js — Axios instance with interceptors + all API call functions
 import axios from 'axios';
 
-const api = axios.create({ baseURL: '/api', timeout: 15000 });
+const baseURL = import.meta.env.VITE_API_URL || '/api';
+const api = axios.create({ baseURL, timeout: 15000 });
 
 // Attach JWT automatically
 api.interceptors.request.use((config) => {

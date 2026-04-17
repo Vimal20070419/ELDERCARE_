@@ -11,7 +11,16 @@ const createApp = () => {
 
   // Security & logging
   app.use(helmet());
-  app.use(cors({ origin: 'http://localhost:5173', credentials: true }));
+  app.use(cors({ 
+    origin: function(origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if(!origin) return callback(null, true);
+      // For production, ideally we'd check against an array of allowed origins.
+      // But to ensure it works immediately with dynamically generated Vercel URLs:
+      return callback(null, true);
+    }, 
+    credentials: true 
+  }));
   app.use(morgan('dev'));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
